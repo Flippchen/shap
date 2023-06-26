@@ -1,6 +1,8 @@
+import onnx
 from .._explainer import Explainer
 from .deep_pytorch import PyTorchDeep
 from .deep_tf import TFDeep
+from ...utils.onnx_converter import convert_onnx_model
 
 
 class Deep(Explainer):
@@ -80,11 +82,16 @@ class Deep(Explainer):
             except:
                 framework = 'tensorflow'
 
+        if isinstance(model, onnx.ModelProto):
+            framework = 'onnx'
+
         if framework == 'tensorflow':
             self.explainer = TFDeep(model, data, session, learning_phase_flags)
         elif framework == 'pytorch':
             self.explainer = PyTorchDeep(model, data)
 
+        elif framework == 'onnx':
+            self.explainer = convert_onnx_model(model, data, session, learning_phase_flags)
         self.expected_value = self.explainer.expected_value
 
     def shap_values(self, X, ranked_outputs=None, output_rank_order='max', check_additivity=True):
